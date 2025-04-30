@@ -111,13 +111,13 @@ async def start_telethon():
                     reply_markup = {
                         "inline_keyboard": [[
                             {"text": "✉️ Откликнуться", "url": f"https://t.me/{username}"}
-                        ]]
+                        ]],
                     }
                 else:
                     reply_markup = {
                         "inline_keyboard": [[
                             {"text": "✉️ Откликнуться", "url": f"tg://user?id={user_id}"}
-                        ]]
+                        ]],
                     }
 
                 url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
