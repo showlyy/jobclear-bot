@@ -125,6 +125,9 @@ async def start_telethon():
 
 # === ЗАПУСК ВСЕГО ===
 if __name__ == '__main__':
+    from admin import register_admin
+    register_admin(dp)
+
     loop = asyncio.get_event_loop()
     loop.create_task(start_telethon())
     executor.start_polling(dp, skip_updates=True)
