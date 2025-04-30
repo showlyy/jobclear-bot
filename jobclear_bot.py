@@ -2,8 +2,7 @@ from dotenv import load_dotenv
 import os
 import asyncio
 import requests
-from aiogram import Bot, Dispatcher, types
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 
@@ -63,8 +62,22 @@ EXCLUDE = [
 # === TELETHON ПАРСЕР И AIORAM БОТ ===
 async def start_telethon():
     client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
-    await client.start()
 
+    # Подключение к Telegram
+    print("Подключаемся к Telegram...")
+    await client.start()
+    print("Подключение успешно!")
+
+    # Проверка подключения к каналам
+    for channel in CHANNELS:
+        try:
+            entity = await client.get_entity(channel)
+            print(f"Подключен к каналу: {entity.title}")
+        except Exception as e:
+            print(f"Ошибка при подключении к каналу {channel}: {e}")
+            continue
+
+    # Слушаем события новых сообщений
     @client.on(events.NewMessage(chats=CHANNELS))
     async def new_message_handler(event):
         print("📥 Поймано сообщение:")
@@ -79,6 +92,7 @@ async def start_telethon():
         if event.message.message:
             text = event.message.message.lower()
 
+            # Фильтрация по ключевым словам и исключениям
             if any(w in text for w in INCLUDE) and not any(bad in text for bad in EXCLUDE):
                 print("Сообщение прошло фильтрацию!")  # Логируем успешную фильтрацию
                 author = await event.get_sender()
