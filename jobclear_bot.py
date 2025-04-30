@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+import os
 import asyncio
 import requests
 
@@ -25,10 +27,13 @@ def save_seen(msg_id):
 seen_messages = load_seen()
 
 # === НАСТРОЙКИ ===
-API_ID = 26437413
-API_HASH = "e1afb084d8c5896f0b685eeaa1b994f7"
-SESSION_STRING = "1ApWapzMBuzfEdBJP96bj0PpP8gPI01XW3eCZnp_A0jChmEwTcHytzAR2xWYqCRW1tqNjcaEP1t_48ts3G4VszH7eHlBujesmzWLW6CyS9_ZU7z8BziZjOYR5e3zDgkWMyVaoVcZpQEd1fK6YN3yx-MwHDvqw_nXQAwKN86dP8V4CIDYeWjZEMPA2bsNuOOqbMuMp63zW5Mnf8Sbm66iKhvUcXG6csCKXImghg2sgl882igg60o-7l64sS6O45pxpyXnpZ4U_r_WtYudyDFzX684-Sffr2e3-Z9nxrG33bk5gw-edivh4gW-S_UAywunYuypxgWGMAvlB5lvimWSL5FoIo_EWVB8="
-BOT_TOKEN = "8067543950:AAE4l7_AKGvLhTgEM0tmVCscH9kNuK5Db90"
+load_dotenv()
+
+# Используем переменные окружения
+API_ID = os.getenv("API_ID")
+API_HASH = os.getenv("API_HASH")
+SESSION_STRING = os.getenv("SESSION_STRING")
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OWNER_ID = 1035490546
 
 CHANNELS = [
