@@ -24,8 +24,7 @@ def save_seen(msg_id):
     with open(SEEN_FILE, "a") as f:
         f.write(f"{msg_id}\n")
 
-# временно отключаем сохранение ID сообщений
-seen_messages = set()  # Просто создаем пустое множество для временной проверки
+seen_messages = load_seen()
 
 # === НАСТРОЙКИ ===
 load_dotenv()
@@ -61,8 +60,8 @@ INCLUDE = [
 EXCLUDE = [
     "за отзыв", "портфолио", "1000", "бесплатно",
     "#помогу", "#предлагаю", "#сделаю", "предлагаю", "помогу", "готов",
-    "заберите", "если нужно", "кому нужно", "предоставляю", "научу", "проконсультирую", "#Рилсмейкера"
-    "#копирайтер", "#рилсы", "отзывы" , "менеджер", "от 18" , "#прожект", "#управляющий", "#продюссер", "создаю", "хостинг"
+    "заберите", "если нужно", "кому нужно", "предоставляю", "научу", "проконсультирую", 
+    "#Рилсмейкера", "#копирайтер", "#рилсы", "отзывы"
 ]
 
 # === AIORAM БОТ ===
@@ -96,20 +95,16 @@ async def start_telethon():
 
         message_id = event.id
         if message_id in seen_messages:
-            return  # Пропускаем уже обработанные сообщения
-
+            return
         seen_messages.add(message_id)
         save_seen(message_id)
 
         if event.message.message:
             text = event.message.message.lower()
 
-            print(f"Текст сообщения: {text}")  # Логируем текст вакансии
-
-            # Фильтрация по ключевым словам
+            # Фильтрация по ключевым словам и исключениям
             if any(w in text for w in INCLUDE) and not any(bad in text for bad in EXCLUDE):
                 print("Сообщение прошло фильтрацию!")  # Логируем успешную фильтрацию
-
                 author = await event.get_sender()
                 username = getattr(author, 'username', None)
                 user_id = author.id
@@ -117,14 +112,12 @@ async def start_telethon():
                 msg = f"📥 Новая вакансия:\n\n{event.message.message}"
 
                 if username:
-                    print(f"Отправляем сообщение с кнопкой на {username}")  # Логируем перед отправкой
                     reply_markup = {
                         "inline_keyboard": [[
                             {"text": "✉️ Откликнуться", "url": f"https://t.me/{username}"}
                         ]],
                     }
                 else:
-                    print(f"Отправляем сообщение с кнопкой на {user_id}")  # Логируем перед отправкой
                     reply_markup = {
                         "inline_keyboard": [[
                             {"text": "✉️ Откликнуться", "url": f"tg://user?id={user_id}"}
@@ -137,9 +130,7 @@ async def start_telethon():
                     "text": msg,
                     "reply_markup": reply_markup
                 }
-                response = requests.post(url, json=payload)
-
-                print(f"Ответ от Telegram API: {response.text}")  # Логируем ответ от API
+                requests.post(url, json=payload)
 
     print("✅ JobClear запущен: бот + парсер")
     await client.run_until_disconnected()
