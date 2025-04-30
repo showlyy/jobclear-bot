@@ -2,6 +2,11 @@ from dotenv import load_dotenv
 import os
 import asyncio
 import requests
+import pip
+
+from aiogram import Bot, Dispatcher, types
+from aiogram.utils import executor
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
@@ -25,6 +30,7 @@ seen_messages = load_seen()
 # === НАСТРОЙКИ ===
 load_dotenv()
 
+# Используем переменные окружения
 API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
 SESSION_STRING = os.getenv("SESSION_STRING")
@@ -59,12 +65,37 @@ EXCLUDE = [
     "#Рилсмейкера", "#копирайтер", "#рилсы", "отзывы"
 ]
 
+# === AIORAM БОТ ===
+bot = Bot(token=BOT_TOKEN)
+dp = Dispatcher(bot)
+
+kb = ReplyKeyboardMarkup(resize_keyboard=True)
+kb.add(KeyboardButton("👤 Личный кабинет"))
+
+@dp.message_handler(commands=['start'])
+async def start_cmd(message: types.Message):
+    await message.answer(
+        f"Привет, {message.from_user.first_name}! Я — JobClear.\n\n"
+        "Я буду присылать тебе только адекватные вакансии по дизайну — без трэша, за отзыв и прочего мусора.",
+        reply_markup=kb
+    )
+
+@dp.message_handler(text="👤 Личный кабинет")
+async def profile(message: types.Message):
+    await message.answer("🧾 Подписка: неограниченный доступ\n🎯 Категория: Дизайн\n")
+
 # === TELETHON ПАРСЕР ===
 async def start_telethon():
+    print("✅ Запуск парсера...")
+
+    # Логируем сессию
+    print(f"SESSION_STRING: {SESSION_STRING}")
+
     client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
     await client.start()
 
-    # Проверка подключения к каналам
+    # Логирование подключения к каналам
+    print("📡 Подключение к каналам...")
     for channel in CHANNELS:
         try:
             entity = await client.get_entity(channel)
@@ -80,6 +111,7 @@ async def start_telethon():
 
         message_id = event.id
         if message_id in seen_messages:
+            print(f"Сообщение {message_id} уже обработано.")
             return
         seen_messages.add(message_id)
         save_seen(message_id)
@@ -122,6 +154,11 @@ async def start_telethon():
 
 # === ЗАПУСК ВСЕГО ===
 if __name__ == '__main__':
+    from admin_panel import register_admin
+    register_admin(dp)
+
     loop = asyncio.get_event_loop()
     loop.create_task(start_telethon())
-    loop.run_forever()
+
+    # Удалена строка с app.run, так как она не нужна для long-polling
+    executor.start_polling(dp, skip_updates=True)
