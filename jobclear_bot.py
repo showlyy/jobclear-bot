@@ -138,4 +138,10 @@ if __name__ == '__main__':
 
     loop = asyncio.get_event_loop()
     loop.create_task(start_telethon())
+
+    # Обновлено: добавляем открытие порта на Render
+    import os
+    port = int(os.getenv("PORT", 5000))  # Используем переменную окружения
+    app.run(host="0.0.0.0", port=port)  # Запускаем сервер на Render с правильным портом
+
     executor.start_polling(dp, skip_updates=True)
