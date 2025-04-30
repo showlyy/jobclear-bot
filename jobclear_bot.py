@@ -83,6 +83,9 @@ async def start_telethon():
 
     @client.on(events.NewMessage(chats=CHANNELS))
     async def new_message_handler(event):
+        print("📥 Поймано сообщение:")
+        print(event.message.message)
+
         message_id = event.id
         if message_id in seen_messages:
             return
