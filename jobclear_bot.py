@@ -2,7 +2,6 @@ from dotenv import load_dotenv
 import os
 import asyncio
 import requests
-import pip
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
@@ -15,13 +14,18 @@ from telethon.sessions import StringSession
 SEEN_FILE = "seen.txt"
 
 def load_seen():
+    print("🔍 Загружаем файл с сохранёнными ID...")
     try:
         with open(SEEN_FILE, "r") as f:
-            return set(map(int, f.read().splitlines()))
+            seen = set(map(int, f.read().splitlines()))
+            print(f"✅ Загружено {len(seen)} сохранённых ID.")
+            return seen
     except FileNotFoundError:
+        print("❗️ Файл с ID не найден. Создадим новый.")
         return set()
 
 def save_seen(msg_id):
+    print(f"💾 Сохраняем ID сообщения: {msg_id}")
     with open(SEEN_FILE, "a") as f:
         f.write(f"{msg_id}\n")
 
@@ -74,6 +78,7 @@ kb.add(KeyboardButton("👤 Личный кабинет"))
 
 @dp.message_handler(commands=['start'])
 async def start_cmd(message: types.Message):
+    print(f"🟢 Получена команда /start от {message.from_user.first_name}")
     await message.answer(
         f"Привет, {message.from_user.first_name}! Я — JobClear.\n\n"
         "Я буду присылать тебе только адекватные вакансии по дизайну — без трэша, за отзыв и прочего мусора.",
@@ -82,34 +87,24 @@ async def start_cmd(message: types.Message):
 
 @dp.message_handler(text="👤 Личный кабинет")
 async def profile(message: types.Message):
+    print(f"🟢 Получена команда 'Личный кабинет' от {message.from_user.first_name}")
     await message.answer("🧾 Подписка: неограниченный доступ\n🎯 Категория: Дизайн\n")
 
 # === TELETHON ПАРСЕР ===
 async def start_telethon():
-    print("✅ Запуск парсера...")
-
-    # Логируем сессию
-    print(f"SESSION_STRING: {SESSION_STRING}")
-
+    print("🔌 Подключение к Telegram...")
     client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
     await client.start()
-
-    # Логирование подключения к каналам
-    print("📡 Подключение к каналам...")
-    for channel in CHANNELS:
-        try:
-            entity = await client.get_entity(channel)
-            print(f"Подключен к каналу: {entity.title}")
-        except Exception as e:
-            print(f"Ошибка при подключении к каналу {channel}: {e}")
-            continue
+    print("✅ Подключение успешно.")
 
     @client.on(events.NewMessage(chats=CHANNELS))
     async def new_message_handler(event):
         print("📥 Поймано сообщение:")
-        print(event.message.message)
+        print(event.message.message)  # Логируем текст сообщения
 
         message_id = event.id
+        print(f"Получен message_id: {message_id}")
+
         if message_id in seen_messages:
             print(f"Сообщение {message_id} уже обработано.")
             return
@@ -118,6 +113,7 @@ async def start_telethon():
 
         if event.message.message:
             text = event.message.message.lower()
+            print(f"Текст сообщения: {text}")
 
             # Фильтрация по ключевым словам и исключениям
             if any(w in text for w in INCLUDE) and not any(bad in text for bad in EXCLUDE):
@@ -141,19 +137,22 @@ async def start_telethon():
                         ]],
                     }
 
+                print(f"Отправка сообщения пользователю {OWNER_ID}")
                 url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
                 payload = {
                     "chat_id": OWNER_ID,
                     "text": msg,
                     "reply_markup": reply_markup
                 }
-                requests.post(url, json=payload)
+                response = requests.post(url, json=payload)
+                print(f"Ответ от Telegram API: {response.status_code} {response.text}")
 
-    print("✅ JobClear запущен: парсер с Telethon")
+    print("✅ JobClear запущен: бот + парсер")
     await client.run_until_disconnected()
 
 # === ЗАПУСК ВСЕГО ===
 if __name__ == '__main__':
+    print("🔄 Регистрация администратора...")
     from admin_panel import register_admin
     register_admin(dp)
 
@@ -161,4 +160,5 @@ if __name__ == '__main__':
     loop.create_task(start_telethon())
 
     # Удалена строка с app.run, так как она не нужна для long-polling
+    print("🚀 Запуск бота через long polling...")
     executor.start_polling(dp, skip_updates=True)
