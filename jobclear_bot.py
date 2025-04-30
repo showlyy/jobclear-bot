@@ -24,7 +24,8 @@ def save_seen(msg_id):
     with open(SEEN_FILE, "a") as f:
         f.write(f"{msg_id}\n")
 
-seen_messages = load_seen()
+# временно отключаем сохранение ID сообщений
+seen_messages = set()  # Просто создаем пустое множество для временной проверки
 
 # === НАСТРОЙКИ ===
 load_dotenv()
@@ -52,14 +53,16 @@ CHANNELS = [
 
 INCLUDE = [
     "дизайн", "веб", "ui", "ux", "интерфейс", "tilda", "лендинг",
-    "сайт", "веб-дизайн", "прототип", "визуал", "логотип", "брендинг" , "дизайнер" , "веб-дизайнер" , "веб-дизайн"
-    , "Сайтолог" , "Сайтодел" , "Figma" , "#ищу" , "#тильда", "#сайт", "#дизайнер", "#Tilda", "#Дизайн"
+    "сайт", "веб-дизайн", "прототип", "визуал", "логотип", "брендинг", 
+    "дизайнер", "веб-дизайнер", "веб-дизайн", "Сайтолог", "Сайтодел", 
+    "Figma", "#ищу", "#тильда", "#сайт", "#дизайнер", "#Tilda", "#Дизайн"
 ]
 
 EXCLUDE = [
     "за отзыв", "портфолио", "1000", "бесплатно",
     "#помогу", "#предлагаю", "#сделаю", "предлагаю", "помогу", "готов",
-    "заберите", "если нужно", "кому нужно", "предоставляю", "научу", "проконсультирую"
+    "заберите", "если нужно", "кому нужно", "предоставляю", "научу", "проконсультирую", "#Рилсмейкера"
+    "#копирайтер", "#рилсы", "отзывы" , "менеджер", "от 18" , "#прожект", "#управляющий", "#продюссер", "создаю", "хостинг"
 ]
 
 # === AIORAM БОТ ===
@@ -93,14 +96,20 @@ async def start_telethon():
 
         message_id = event.id
         if message_id in seen_messages:
-            return
+            return  # Пропускаем уже обработанные сообщения
+
         seen_messages.add(message_id)
         save_seen(message_id)
 
         if event.message.message:
             text = event.message.message.lower()
 
+            print(f"Текст сообщения: {text}")  # Логируем текст вакансии
+
+            # Фильтрация по ключевым словам
             if any(w in text for w in INCLUDE) and not any(bad in text for bad in EXCLUDE):
+                print("Сообщение прошло фильтрацию!")  # Логируем успешную фильтрацию
+
                 author = await event.get_sender()
                 username = getattr(author, 'username', None)
                 user_id = author.id
@@ -108,12 +117,14 @@ async def start_telethon():
                 msg = f"📥 Новая вакансия:\n\n{event.message.message}"
 
                 if username:
+                    print(f"Отправляем сообщение с кнопкой на {username}")  # Логируем перед отправкой
                     reply_markup = {
                         "inline_keyboard": [[
                             {"text": "✉️ Откликнуться", "url": f"https://t.me/{username}"}
                         ]],
                     }
                 else:
+                    print(f"Отправляем сообщение с кнопкой на {user_id}")  # Логируем перед отправкой
                     reply_markup = {
                         "inline_keyboard": [[
                             {"text": "✉️ Откликнуться", "url": f"tg://user?id={user_id}"}
@@ -126,7 +137,9 @@ async def start_telethon():
                     "text": msg,
                     "reply_markup": reply_markup
                 }
-                requests.post(url, json=payload)
+                response = requests.post(url, json=payload)
+
+                print(f"Ответ от Telegram API: {response.text}")  # Логируем ответ от API
 
     print("✅ JobClear запущен: бот + парсер")
     await client.run_until_disconnected()
