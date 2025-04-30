@@ -59,14 +59,10 @@ EXCLUDE = [
     "#Рилсмейкера", "#копирайтер", "#рилсы", "отзывы"
 ]
 
-# === TELETHON ПАРСЕР И AIORAM БОТ ===
+# === TELETHON ПАРСЕР ===
 async def start_telethon():
     client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
-
-    # Подключение к Telegram
-    print("Подключаемся к Telegram...")
     await client.start()
-    print("Подключение успешно!")
 
     # Проверка подключения к каналам
     for channel in CHANNELS:
@@ -77,7 +73,6 @@ async def start_telethon():
             print(f"Ошибка при подключении к каналу {channel}: {e}")
             continue
 
-    # Слушаем события новых сообщений
     @client.on(events.NewMessage(chats=CHANNELS))
     async def new_message_handler(event):
         print("📥 Поймано сообщение:")
@@ -129,4 +124,4 @@ async def start_telethon():
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(start_telethon())
-    loop.run_forever()  # Запускаем все на фоне без использования long-polling
+    loop.run_forever()
